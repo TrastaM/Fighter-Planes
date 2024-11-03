@@ -4,25 +4,31 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    // its access level: public or private
-    // its type: int (5, 8, 36, etc.), float (2.5f, 3.7f, etc.)
-    // its name: speed, playerSpeed --- Speed, PlayerSpeed
-    // optional: give it an initial value
+    // Player attributes
     private float speed;
     private int lives = 3;
     private int score = 0;
-    private float horizontalInput;
-    private float verticalInput;
 
     public GameObject bullet;
 
-    // Start is called before the first frame update
+    private float screenWidth;
+    private float screenHeight;
+    private float minY, maxY;
+
     void Start()
     {
         speed = 5f;
+
+        // Get the screen boundaries based on the camera's orthographic size
+        Camera cam = Camera.main;
+        screenHeight = 2f * cam.orthographicSize;
+        screenWidth = screenHeight * cam.aspect;
+
+        // Set movement boundaries
+        minY = cam.transform.position.y - screenHeight / 2;   // Bottom of screen
+        maxY = cam.transform.position.y;                       // Middle of screen
     }
 
-    // Update is called once per frame
     void Update()
     {
         Movement();
@@ -31,33 +37,35 @@ public class Player : MonoBehaviour
 
     void Movement()
     {
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
-        transform.Translate(new Vector3(horizontalInput, verticalInput, 0) * Time.deltaTime * speed);
+        float horizontalInput = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
+        float verticalInput = Input.GetAxis("Vertical") * speed * Time.deltaTime;
 
-        // if (condition) { //do this }
-        // else if (other condition { //do that }
-        // else { //do this final }
+        Vector3 newPosition = transform.position + new Vector3(horizontalInput, verticalInput, 0);
+
+        // Restrict player's Y position
+        newPosition.y = Mathf.Clamp(newPosition.y, minY, maxY);
+
+        // Wrap player's X position
+        if (newPosition.x < -screenWidth / 2)
+            newPosition.x = screenWidth / 2;
+        else if (newPosition.x > screenWidth / 2)
+            newPosition.x = -screenWidth / 2;
+
+        // Apply the restricted position
+        transform.position = newPosition;
+
+        // Additional horizontal wrapping from the original Player script
         if (transform.position.x > 11f || transform.position.x <= -11f)
         {
             transform.position = new Vector3(transform.position.x * -1, transform.position.y, 0);
-        }
-        // stop player at y 1.8f
-        if (transform.position.y > 7.2f || transform.position.y <= -7.2f)
-        {
-            transform.position = new Vector3(transform.position.x, transform.position.y * -1, 0);
         }
     }
 
     void Shooting()
     {
-        //if I press SPACE
-        //Create a bullet
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            //Create a bullet
+            // Create a bullet
             Instantiate(bullet, transform.position + new Vector3(0, 1, 0), Quaternion.identity);
         }
     }
-
-}
